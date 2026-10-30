@@ -1,30 +1,27 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LaporanController;
-use App\Http\Controllers\Auth\RegisterController;
-use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\ProfileController;
+use Illuminate\Support\Facades\Route;
 
-// Halaman utama langsung ke form pelaporan (bebas diakses warga)
 Route::get('/', function () {
-    return redirect()->route('laporan.create');
+    return view('welcome');
 });
 
-// Halaman form pelaporan dan proses kirim laporan (tanpa login)
-Route::get('/laporan/buat', [LaporanController::class, 'create'])->name('laporan.create');
-Route::post('/laporan', [LaporanController::class, 'store'])->name('laporan.store');
+Route::get('/dashboard', function () {
+    return view('dashboard');
+})->middleware(['auth', 'verified'])->name('dashboard');
 
-// Route authentication
-Route::get('/register', [RegisterController::class, 'create'])->name('register');
-Route::post('/register', [RegisterController::class, 'store']);
-Route::get('/login', [LoginController::class, 'create'])->name('login');
-Route::post('/login', [LoginController::class, 'store']);
-Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
+// Warga: kirim laporan tanpa login
+Route::resource('laporan', LaporanController::class)->only(['create', 'store']);
 
-// Route yang wajib login (khusus petugas)
+// Petugas: kelola laporan, wajib login
 Route::middleware('auth')->group(function () {
-    Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
-    Route::get('/profil', function () {
-        return view('profil');
-    })->name('profil');
+    Route::resource('laporan', LaporanController::class)->except(['create', 'store']);
+
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
+
+require __DIR__.'/auth.php';
